@@ -1,0 +1,11 @@
+<html>
+	<head>
+		<script src="js/CocoonJSExtensions/CocoonJS.js"></script>
+		<script src="js/CocoonJSExtensions/CocoonJS_App.js"></script>
+		<script src="js/CocoonJSExtensions/CocoonJS_App_ForCocoonJS.js"></script>
+		<script>
+			CocoonJS.App.onLoadInTheWebViewSucceed.addEventListener(function(pageUrl) { CocoonJS.App.forwardAsync("CocoonJS.App.show()"); });
+			CocoonJS.App.loadInTheWebView("wv.html");
+		</script>
+	</head>
+</html>

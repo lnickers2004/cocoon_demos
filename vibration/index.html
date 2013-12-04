@@ -1,0 +1,149 @@
+<html>
+	<body>
+		<script src = "js/CocoonJSExtensions/CocoonJS.js"></script>
+		<script src = "js/CocoonJSExtensions/CocoonJS_App.js"></script>
+		<script src = "js/CocoonJSExtensions/CocoonJS_App_ForCocoonJS.js"></script>
+		<script>
+			function getPatternIndexByPatternName(patternName)
+			{
+				var patternIndex = -1;
+				for (var i = 0; patternIndex == -1 && i < patterns.length; i++)
+				{
+					patternIndex = patterns[i].id === patternName ? i : -1;
+				}
+				return patternIndex;
+			}
+			function playPattern(patternName)
+			{
+				var patternIndex = getPatternIndexByPatternName(patternName);
+				if (patternIndex >= 0 && patternIndex < patterns.length && navigator.vibrate)
+				{
+					navigator.vibrate(patterns[patternIndex].pattern);
+					CocoonJS.App.forwardAsync("document.getElementById('results').value='" + JSON.stringify(patterns[patternIndex].pattern) + "';");
+				}
+			};
+
+			function reallyClearPattern()
+			{
+				creatingPattern = false;
+				pattern = [];
+				patternElementVibration = false;
+				patternElementStartTimeInMilliseconds = 0;
+				CocoonJS.App.forwardAsync("document.getElementById('results').value='';");
+			}
+
+			function clearPattern()
+			{
+				if (creatingPattern)
+				{				
+					CocoonJS.App.showMessageBox("Save pattern", "Do you want to save the current pattern before clearing it?", "Yes", "No");
+				}
+				else
+				{
+					reallyClearPattern();
+				}
+
+			};
+
+			function createPattern(start)
+			{
+				var currentTimeInMilliseconds = new Date().getTime();
+
+				if (start)
+				{
+					if (!creatingPattern)
+					{
+						creatingPattern = true;
+					}
+					else
+					{
+						pattern.push(currentTimeInMilliseconds - patternElementStartTimeInMilliseconds);
+					}
+					patternElementStartTimeInMilliseconds = currentTimeInMilliseconds;
+					patternElementVibration = !patternElementVibration;
+				}
+				else
+				{
+					// Process pattern
+					if (creatingPattern)
+					{
+						pattern.push(currentTimeInMilliseconds - patternElementStartTimeInMilliseconds);
+						patternElementStartTimeInMilliseconds = currentTimeInMilliseconds;
+						patternElementVibration = !patternElementVibration;
+					}
+				}
+
+				// Tell the webview to show the pattern.
+				CocoonJS.App.forwardAsync("document.getElementById('results').value='" + JSON.stringify(pattern) + "';");
+			};
+
+
+
+			var patterns = 
+				[ 
+					{ id:"Final Fantasy Song", pattern:[0,50,100,50,100,50,100,400,100,300,100,350,50,200 ,100,100,50,600] }, 
+					{ id:"Star Wars Imperial March", pattern:[300,400,300,400,300,400,200,300,150,100,150,400,200,300,150,100,150] }, 
+					{ id:"Horse", pattern:[0,150,50,75,50,75,50,150,50,75,50,75,50,150,50,75,50,75,50,150,50,75,50,75,50,300] }, 
+					{ id:"HeartBeat", pattern:[75,100,75,800,75, 100, 75, 800, 75, 75, 75, 800, 75,100,75,800,75, 100, 75, 800, 75, 75, 75, 800] }, 
+					{ id:"Laugh", pattern:[0, 250, 200, 250, 150, 150, 75, 150, 75, 150] }, 
+					{ id:"Whatever", pattern:[0,100,200,100,100,100,100,100,200,100,500,100,225, 100] }, 
+					{ id:"Engine", pattern:[0,200,50,175,50,150,50,125,50,100,50,75,50,50,50,75,50,100,50,125,50,150,50,157,50,200] }
+				];
+
+			var creatingPattern = false;
+			var pattern = [];
+			var patternElementVibration = false;
+			var patternElementStartTimeInMilliseconds = 0;
+			var patternIndex = 0;
+
+			CocoonJS.App.onMessageBoxConfirmed.addEventListener(function()
+			{
+				CocoonJS.App.showTextDialog("Pattern name", "Enter a name for the pattern", "pattern-" + patternIndex, CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok");
+			});
+
+			CocoonJS.App.onMessageBoxDenied.addEventListener(function()
+			{
+				reallyClearPattern();
+			});
+
+			CocoonJS.App.onTextDialogFinished.addEventListener(function(text)
+			{
+				var patternIndex = getPatternIndexByPatternName(text);
+				console.log("patternIndex = " + patternIndex);
+				if (patternIndex !== -1)
+				{
+					CocoonJS.App.showMessageBox("Invalid pattern name", "The pattern name already exists. Please, enter a new name or cancel clear without saving the pattern.", "Rename", "Cancel");
+				}
+				else
+				{
+					patterns.push({id : text, pattern : pattern});
+					window.patternIndex++;
+					CocoonJS.App.forwardAsync("addANewPatternButton('" + text + "');");
+					reallyClearPattern();
+				}
+			});
+
+			CocoonJS.App.onTextDialogCancelled.addEventListener(function()
+			{
+				reallyClearPattern();
+			});
+
+			CocoonJS.App.onLoadInTheWebViewSucceed.addEventListener(function()
+			{
+				console.log("Showing the webview!!!!!!!!");
+				CocoonJS.App.forwardAsync("CocoonJS.App.show(0, 0, " + window.innerWidth + ", " + window.innerHeight + ");");
+				// CocoonJS.App.forwardAsync("CocoonJS.App.show(0, 0, 100, 100);");
+			});
+
+			CocoonJS.App.loadInTheWebView("wv.html");
+
+			setInterval(function()
+			{
+				if (creatingPattern && patternElementVibration && navigator.vibrate)
+				{
+					navigator.vibrate(1000.0/60.0);
+				}
+			}, 1.0 / 60.0);
+		</script>
+	</body>
+</html>

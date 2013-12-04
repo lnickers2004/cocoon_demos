@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - morph targets - horse</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="three.min.js"></script>
+
+		<script src="stats.min.js"></script>
+
+		<script>
+
+			var container, stats;
+			var camera, scene, projector, renderer;
+			var mesh;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				var info = document.createElement( 'div' );
+				info.style.position = 'absolute';
+				info.style.top = '10px';
+				info.style.width = '100%';
+				info.style.textAlign = 'center';
+				info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> webgl - morph targets - horse. model by <a href="http://mirada.com/">mirada</a> from <a href="http://ro.me">rome</a>';
+				container.appendChild( info );
+
+				//
+
+				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.y = 300;
+				camera.target = new THREE.Vector3( 0, 150, 0 );
+
+				scene = new THREE.Scene();
+
+				//
+
+				var light = new THREE.DirectionalLight( 0xefefff, 2 );
+				light.position.set( 1, 1, 1 ).normalize();
+				scene.add( light );
+
+				var light = new THREE.DirectionalLight( 0xffefef, 2 );
+				light.position.set( -1, -1, -1 ).normalize();
+				scene.add( light );
+
+				var loader = new THREE.JSONLoader( true );
+				loader.load( "models/animated/horse.js", function( geometry ) {
+
+					mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: 0x606060, morphTargets: true } ) );
+					mesh.scale.set( 1.5, 1.5, 1.5 );
+					scene.add( mesh );
+
+				} );
+
+				//
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.sortObjects = false;
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setClearColorHex( 0xf0f0f0, 1 );
+
+				container.appendChild(renderer.domElement);
+
+				//
+
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+
+			}
+
+			var radius = 600;
+			var theta = 0;
+
+			var duration = 1000;
+			var keyframes = 15, interpolation = duration / keyframes;
+			var lastKeyframe = 0, currentKeyframe = 0;
+
+
+			var mouseDown = false;
+			var mouseDeltaX = 0;
+			var mouseDeltaY = 0;
+			var lastMouseX = 0;
+			var lastMouseY = 0;
+			var windowHalfX = window.innerWidth/2;
+			var windowHalfY = window.innerHeight/2;
+
+			function render() {
+
+				theta += 0.1;
+
+				var angleDx = mouseDeltaX/windowHalfX * 75;
+				var angleDy = mouseDeltaY/windowHalfY * 75;
+
+				camera.position.x = radius * Math.sin( THREE.Math.degToRad( theta + angleDx) );
+				camera.position.z = radius * Math.cos( THREE.Math.degToRad( theta + angleDy ) );
+
+				camera.lookAt( camera.target );
+
+				if ( mesh ) {
+
+					// Alternate morph targets
+
+					var time = Date.now() % duration;
+
+					var keyframe = Math.floor( time / interpolation );
+
+					if ( keyframe != currentKeyframe ) {
+
+						mesh.morphTargetInfluences[ lastKeyframe ] = 0;
+						mesh.morphTargetInfluences[ currentKeyframe ] = 1;
+						mesh.morphTargetInfluences[ keyframe ] = 0;
+
+						lastKeyframe = currentKeyframe;
+						currentKeyframe = keyframe;
+
+						// console.log( mesh.morphTargetInfluences );
+
+					}
+
+					mesh.morphTargetInfluences[ keyframe ] = ( time % interpolation ) / interpolation;
+					mesh.morphTargetInfluences[ lastKeyframe ] = 1 - mesh.morphTargetInfluences[ keyframe ];
+
+				}
+
+				renderer.render( scene, camera );
+
+			}
+
+
+
+			document.addEventListener('mousedown', onDocumentMouseDown, false);
+			document.addEventListener('mousemove', onDocumentMouseMove, false);
+			document.addEventListener('mouseup', onDocumentMouseUp, false);
+			document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+			document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+
+			function onDocumentMouseDown(event) {
+					mouseDown = true;
+					var px = event.clientX;
+					var py = event.clientY;
+					lastMouseX = px;
+					lastMouseY = py;
+
+			}
+
+			function onDocumentMouseMove(event) {
+
+				if (mouseDown)
+				{
+					var px = event.clientX;
+					var py = event.clientY;
+
+					mouseDeltaX+= lastMouseX - px;
+					mouseDeltaY+= lastMouseY - py;
+					lastMouseX = px;
+					lastMouseY = py;
+				}
+
+			}
+
+			function onDocumentMouseUp(event) {
+				mouseDown = false;
+			}
+
+			function onDocumentTouchStart( event ) {
+
+				if ( event.touches.length === 1 ) {
+
+					event.preventDefault();
+
+					lastMouseX = event.touches[ 0 ].pageX;
+					lastMouseY = event.touches[ 0 ].pageY;
+
+				}
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				if ( event.touches.length === 1 ) {
+
+					event.preventDefault();
+
+					var px = event.touches[ 0 ].pageX;
+					var py = event.touches[ 0 ].pageY;
+
+					mouseDeltaX+= lastMouseX - px;
+					mouseDeltaY+= lastMouseY - py;
+					lastMouseX = px;
+					lastMouseY = py;
+				}
+
+			}
+
+
+		</script>
+
+	</body>
+</html>

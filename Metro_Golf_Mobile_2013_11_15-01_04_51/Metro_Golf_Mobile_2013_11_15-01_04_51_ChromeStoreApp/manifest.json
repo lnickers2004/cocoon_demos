@@ -1,0 +1,1 @@
+{"minimum_chrome_version": "31", "description": "This app was made thanks to the technology provided by CocoonJS by Ludei.", "icons": {"128": "icons/res1384473812155chromeIcon128.png", "16": "icons/res1384473812363chromeIcon16.png"}, "app": {"launch": {"local_path": "index.html"}}, "offline_enabled": false, "version": "1", "manifest_version": 2, "name": "Metro Golf Mobile"}

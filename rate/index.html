@@ -1,0 +1,74 @@
+<html>
+	<head>
+		<script src="js/CocoonJSExtensions/CocoonJS.js"></script>
+		<script src="js/CocoonJSExtensions/CocoonJS_App.js"></script>
+		<script src="js/CocoonJSExtensions/CocoonJS_App_ForCocoonJS.js"></script>
+		<script>
+			/**
+			This demo shows many new extensions that allows developers to take advantage of the native side features.
+			- How to open an URL to rate your app (for example).
+			- How to control the back button in Android and query the user if he/she wants to finish it.
+			*/
+			window.onload = function()
+			{
+				// The list of URLs for rating. As they depend on the operating system/store, different 
+				var IOS_RATING_URL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?id=519623307&onlyLatestVersion=false&type=Purple+Software";
+				var ANDROID_RATING_URL = "market://details?id=com.ideateca.cocoonjslauncher";
+
+				// Select the rating URL depending on the operating system and if we are inside CocoonJS.
+				var ratingURL = null;
+				if (navigator.isCocoonJS)
+				{
+					if (/ios/.test(navigator.userAgent))
+					{
+						ratingURL = IOS_RATING_URL;
+					}
+					else if (/android/.test(navigator.userAgent))
+					{
+						ratingURL = ANDROID_RATING_URL;
+					}
+				}
+				else
+				{
+					ratingURL = "http://ludei.com";
+				}
+
+				var canvas = document.createElement("canvas");
+				canvas.width  = window.innerWidth ;
+				canvas.height = window.innerHeight;
+				var ctx = canvas.getContext("2d");
+				document.body.appendChild(canvas);
+	            ctx.clearRect(0, 0, canvas.width, canvas.height);
+	            ctx.fillStyle="White";
+	            ctx.font = "30pt Arial";
+	            ctx.textAlign = "center";
+	            ctx.fillText("Click to rate...", canvas.width/2, canvas.height/2); 
+
+                var listenerName = 'ontouchstart' in window ? "touchstart" : "click" ;
+
+				window.addEventListener(listenerName, function()
+				{
+					CocoonJS.App.openURL(ratingURL);
+				});
+
+				CocoonJS.App.setAppShouldFinishCallback(function()
+				{
+					// This function is called whenever the user presses the back button in android.
+					// Return true if you want the app to finish. Return false if you do not whant to finish it (thus, you will control the app finalization).
+					// For the purpose of this example, we are going to say false so we can prompt the user to quit the app or not.
+
+					CocoonJS.App.onMessageBoxConfirmed.addEventListener(function()
+					{
+						CocoonJS.App.forceToFinish();
+					});
+					
+					CocoonJS.App.showMessageBox("Finishing the app", "The developer controls the app finalization. Do you really want to finish the demo?", "Yes, finish it!", "No, continue");
+
+					return false;
+				});
+			}
+		</script>
+	</head>
+	<body bgcolor="black">
+	</body>
+</html>
